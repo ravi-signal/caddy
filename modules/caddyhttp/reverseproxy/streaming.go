@@ -636,13 +636,15 @@ type switchProtocolCopier struct {
 }
 
 func (c switchProtocolCopier) copyFromBackend(errc chan<- error) {
-	_, err := io.Copy(c.user, c.backend)
+	buf := make([]byte, 4096)
+	_, err := io.CopyBuffer(c.user, c.backend, buf)
 	errc <- err
 	c.wg.Done()
 }
 
 func (c switchProtocolCopier) copyToBackend(errc chan<- error) {
-	_, err := io.Copy(c.backend, c.user)
+	buf := make([]byte, 4096)
+	_, err := io.CopyBuffer(c.backend, c.user, buf)
 	errc <- err
 	c.wg.Done()
 }
