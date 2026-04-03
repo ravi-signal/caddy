@@ -204,7 +204,11 @@ func (h *Handler) handleUpgradeResponse(logger *zap.Logger, wg *sync.WaitGroup, 
 	defer deleteFrontConn()
 	defer deleteBackConn()
 
-	spc := switchProtocolCopier{user: conn, backend: backConn, wg: wg}
+	bufferSize := int64(defaultBufferSize)
+	if h.WebsocketBufferSize > 0 {
+		bufferSize = h.WebsocketBufferSize
+	}
+	spc := switchProtocolCopier{user: conn, backend: backConn, wg: wg, bufferSize: bufferSize}
 
 	// setup the timeout if requested
 	var timeoutc <-chan time.Time
@@ -636,16 +640,19 @@ func (m *maxLatencyWriter) stop() {
 type switchProtocolCopier struct {
 	user, backend io.ReadWriteCloser
 	wg            *sync.WaitGroup
+	bufferSize    int64
 }
 
 func (c switchProtocolCopier) copyFromBackend(errc chan<- error) {
-	_, err := io.Copy(c.user, c.backend)
+	buf := make([]byte, c.bufferSize)
+	_, err := io.CopyBuffer(c.user, c.backend, buf)
 	errc <- err
 	c.wg.Done()
 }
 
 func (c switchProtocolCopier) copyToBackend(errc chan<- error) {
-	_, err := io.Copy(c.backend, c.user)
+	buf := make([]byte, c.bufferSize)
+	_, err := io.CopyBuffer(c.backend, c.user, buf)
 	errc <- err
 	c.wg.Done()
 }

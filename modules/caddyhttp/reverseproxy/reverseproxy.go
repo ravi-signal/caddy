@@ -180,6 +180,13 @@ type Handler struct {
 	// by the previous config closing. Default: no delay.
 	StreamCloseDelay caddy.Duration `json:"stream_close_delay,omitempty"`
 
+	// If configured, adjusts the sizes of the internal byte buffers used
+	// to copy WebSocket contents between the client and the backend. Each
+	// open websocket will allocate one buffer for streaming from the client
+	// to the backend, and one buffer for streaming from the backend to the
+	// client. Default: 32KiB
+	WebsocketBufferSize int64 `json:"websocket_buffer_size,omitempty"`
+
 	// If configured, rewrites the copy of the upstream request.
 	// Allows changing the request method and URI (path and query).
 	// Since the rewrite is applied to the copy, it does not persist

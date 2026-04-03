@@ -99,6 +99,7 @@ func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error)
 //	    stream_timeout     <duration>
 //	    stream_close_delay <duration>
 //	    verbose_logs
+//	    websocket_buffer_size <duration>
 //
 //	    # request manipulation
 //	    trusted_proxies [private_ranges] <ranges...>
@@ -699,6 +700,21 @@ func (h *Handler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 				}
 				h.StreamCloseDelay = caddy.Duration(dur)
 			}
+
+		case "websocket_buffer_size":
+			if !d.NextArg() {
+				return d.ArgErr()
+			}
+			val := d.Val()
+			usize, err := humanize.ParseBytes(val)
+			if err != nil {
+				return d.Errf("invalid byte size '%s': %v", val, err)
+			}
+			size := int64(usize)
+			if d.NextArg() {
+				return d.ArgErr()
+			}
+			h.WebsocketBufferSize = size
 
 		case "trusted_proxies":
 			for d.NextArg() {
